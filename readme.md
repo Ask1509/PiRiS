@@ -2,7 +2,7 @@
   <tr>
     <td style="text-align: center; border: none;"> 
         Министерство образования и науки РФ <br/>
-        ГБПОУ РМЭ "Йошкар-Олинский Технологический колледж 
+        Технологический колледж 
     </td>
   </tr>
   <tr>
@@ -17,20 +17,20 @@
     <td style="text-align: right; border: none; height: 20em;">
         <div style="float: right;" align="left">
             <b>Разработал</b>: <br/>
-            Колесников Евгений Иванович
+           Аскерова Оксана Васильевна
         </div>
     </td>
   </tr>
   <tr>
     <td style="text-align: center; border: none; height: 1em;">
-        г.Йошкар-Ола, 2021
+        г.Москва, 2023
     </td>
   </tr>
 </table>
 
 <div style="page-break-after: always;"></div>
 
-# https://github.com/kolei/PiRIS
+# https://github.com/Ask1509/PiRIS
 
 # Содержание
 

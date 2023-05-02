@@ -1,0 +1,11 @@
+@url=http://cinema.kolei.ru
+
+# http://swagger.kolei.ru?url=http://cinema.kolei.ru/swagger/cinema.yml
+
+
+### Получение списка фильмов
+GET {{url}}/movies?filter=new
+Authorization: Bearer 1
+
+### Получение картинки
+GET {{url}}/up/images/duna.webp

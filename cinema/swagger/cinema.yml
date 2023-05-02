@@ -1,0 +1,461 @@
+openapi: 3.0.0
+info:
+  title: АПИ для демо-экзамена по компетенции Разработка мобильных приложений
+  version: 0.0.1
+  description: |
+    API для мобильного приложения "WS-Cinema".
+
+    Перечень ошибок неполный, возможно получение от сервера незадокументированных ошибок.
+    
+    Для передачи токена необходимо использовать Header: **Authorization: Bearer {token}**
+    
+    Требования к email: email должен соответствовать паттерну **name@domenname.ru**, где имя и домен второго уровня могут состоять только из маленьких букв и цифр, домен верхнего уровня - только из маленьких букв. Длина домена верхнего уровня - не более 3х символов.
+    
+    **BASE URL**: http://cinema.kolei.ru
+    
+    **BASE URL** Для видео: http://cinema.kolei.ru/up/video/
+    
+    **BASE URL** Для изображений и аватаров: http://cinema.kolei.ru/up/images/
+
+servers:
+  - url: http://cinema.kolei.ru
+
+tags:
+  - name: auth
+    description: Регистрация и авторизация (получение токена)
+  - name: movie
+    description: Информация о киноновинках
+  - name: up
+    description: Ресурсы
+  - name: user
+    description: Информация о пользователе
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - auth
+      summary: Регистрация
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: Email пользователя. Email должен соответствовать паттерну "name@domenname.ru", где имя и домен второго уровня могут состоять только из маленьких букв и цифр, домен верхнего уровня - только из маленьких букв. Длина домена верхнего уровня - не более 3х символов.
+                  example: kolei@yandex.ru
+                password:
+                  type: string
+                  description: Пароль
+                  example: qwerty
+                firstName:
+                  type: string
+                  description: Имя пользователя
+                  example: Евгений
+                lastName:
+                  type: string
+                  description: Фамилия пользователя
+                  example: Колесников
+              required:
+                - email
+                - password
+                - firstName
+                - lastName
+      responses:
+        '200':
+          description: Успешная регистрация
+        '400':
+          description: Проблемы при регистрации
+  /auth/login:
+    post:
+      tags:
+        - auth
+      summary: Аутентификация в системе
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: Email пользователя. Email должен соответствовать паттерну "name@domenname.ru", где имя и домен второго уровня могут состоять только из маленьких букв и цифр, домен верхнего уровня - только из маленьких букв. Длина домена верхнего уровня - не более 3х символов.
+                  example: kolei@yandex.ru
+                password:
+                  type: string
+                  description: Пароль
+                  example: qwerty
+              required:
+                - email
+                - password
+      responses:
+        '200':
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: integer
+                    description: Токен доступа к серверу
+                    example: 123456
+#          links:
+#            GetAuthToken:
+#              parameters:
+#                token: '$response.body#/token'
+        '400':
+          description: Проблема аутентификации
+  /movies:
+    get:
+      tags:
+        - movie
+      summary: Получить список фильмов
+      description: Список фильмов для отображения на главном экране
+      parameters:
+        - name: filter
+          in: query
+          description: Фильтр для запроса
+          required: true
+          schema:
+            type: string
+            default: new
+            enum: [new, inTrend, forMe]
+      responses:
+        '200':
+          description: Массив фильмов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '400':
+          description: Проблемы при запросе
+  /user:
+    get:
+      tags: 
+        - user
+      summary: Получить информацию о пользователе
+      description: Необходимо передать header параметр авторизации типа Bearer
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Данные пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Неавторизированный доступ
+  /user/avatar:
+    post:
+      tags:
+        - user
+      security:
+        - BearerAuth: []
+      summary: Загрузка фотографии
+      description: Данный запрос принимает только изображения формата .jpg/.jpeg. Пустые изображения и невалидные изображения не разрешены
+      requestBody:
+        required: true
+        content: 
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  format: string
+                file:
+                  type: string
+                  format: binary
+            encoding:
+              file:
+                contentType: image/jpg, image/jpeg
+      responses:
+        '200':
+          description: Данные пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Неавторизированный доступ
+  /user/chats:
+    get:
+      tags:
+        - user
+      security:
+        - BearerAuth: []
+      summary: Список чатов
+      description: Необходимо передать header параметр авторизации типа Bearer
+      responses:
+        '200':
+          description: Массив информации о чатах пользователя
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Chat'
+        '401':
+          description: Неавторизованный доступ
+  /chats/{chatId}/messages:
+    get:
+      tags:
+        - user
+      security:
+        - BearerAuth: []
+      summary: Список сообщений чата
+      description: Необходимо передать header параметр авторизации типа Bearer
+      parameters:
+        - in: path
+          name: chatId
+          schema:
+            type: integer
+          required: true
+          description: Id чата
+      responses:
+        '200':
+          description: Массив сообщений чата
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Message'
+        '401':
+          description: Неавторизированный доступ
+    post:
+      tags:
+        - user
+      security:
+        - BearerAuth: []
+      summary: Отправить сообщение в чат
+      description: Необходимо передать header параметр авторизации типа Bearer
+      parameters:
+        - in: path
+          name: chatId
+          schema:
+            type: integer
+          required: true
+          description: Id чата
+      requestBody:
+        required: true
+        content: 
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                  example: Текст сообщения
+      responses:
+        '200':
+          description: Сообщение чата
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '400':
+          description: Проблемы при сохранении
+        '401':
+          description: Неавторизированный доступ
+  /chats/{movieId}:
+    get:
+      tags:
+        - user
+      summary: Список чатов фильма
+      description: Необходимо передать header параметр авторизации типа Bearer
+      parameters:
+        - in: path
+          name: movieId
+          schema:
+            type: integer
+          required: true
+          description: Id фильма
+      responses:
+        '200':
+          description: Массив чатов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Chat'
+        '400':
+          description: Фильм не найден
+    post:
+      tags:
+        - user
+      security:
+        - BearerAuth: []
+      summary: Создать чат (для фильма)
+      description: Необходимо передать header параметр авторизации типа Bearer
+      parameters:
+        - in: path
+          name: movieId
+          schema:
+            type: integer
+          required: true
+          description: Id фильма
+      requestBody:
+        required: true
+        content: 
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Название чата
+      responses:
+        '200':
+          description: Информация о созданном чате
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chat'
+        '401':
+          description: Неавторизованный доступ
+  /up/images/{imageName}:
+    get:
+      tags:
+        - up
+      summary: Получение картинки
+      parameters:
+        - in: path
+          name: imageName
+          schema:
+            type: string
+          required: true
+          description: Название картинки (с расширением), полученное при запросе списка фильмов
+      responses:
+        '200':
+          description: Файл картинки в формате .jpg
+          content:
+            image/jpg:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Картинка не найдена на сервере
+security:
+  - BearerAuth: []
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    Movie:
+      type: array
+      items:
+        type: object
+        properties:
+          movieId:
+            type: string
+            example: 1
+          name:
+            type: string
+            example: Название фильма
+          description:
+            type: string
+            example: Описание фильма
+          age:
+            type: string
+            enum: ['0','6','12','16','18']
+            description: Возрастные ограничения
+          images:
+            type: array
+            items: 
+              type: string
+          poster:
+            type: string
+            example: poster.png
+            description: Название картинки постера
+          tags:
+            $ref: '#/components/schemas/Tag'
+          category:
+            type: string
+            description: Жанр фильма
+        required:
+          - movieId
+          - category
+    Tag:
+      type: array
+      items:
+        type: object
+        properties:
+          idTags:
+            type: string
+            example: 13
+          tagName:
+            type: string
+            example: Комедия
+    User:
+      type: array
+      items:
+        type: object
+        properties:
+          userId:
+            type: string
+            example: 27
+          firstName:
+            type: string
+            example: Евгений
+          lastName:  
+            type: string
+            example: Колесников
+          email:
+            type: string
+            example: kolei@yandex.ru
+          avatar:
+            type: string
+            example: ekolesnikov.jpg
+            description: Название файла
+    Chat:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Название чата
+          example: Дюна
+        chatId: 
+          type: string
+          example: 1
+        movieId:
+          type: string
+          example: 1
+          description: Id фильма
+    Message:
+      type: object
+      properties:
+        chatId:
+          type: string
+          example: 1
+        messageId: 
+          type: string
+          example: 1
+        creationDateTime:
+          type: string
+          format: date
+          example: 2022-11-07 10:30
+          description: Дата и время добавления сообщения в формате YYYY-MM-DD hh:mm
+        firstName:
+          type: string
+          example: Евгений
+        lastName:
+          type: string
+          example: Колесников
+        avatar:
+          type: string
+          example: somename.jpg
+        text:
+          type: string
+          example: А мне не понравился последний сезон. Позор создателям.
+        
